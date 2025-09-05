@@ -1,2 +1,11 @@
 [tool.taskipy.tasks]
 health = "echo 'Woring...'"
+config_git_user = "git config --global user.name \"gabrielhmango\""
+config_git_email = "git config --global user.email \"gabrielhmango@gmail.com\""
+config_git_list = "git config --global --list"
+config_git = "task config_git_user && task config_git_email && task config_git_list"
+requirements = "pip freeze > requirements.txt"
+format = "blue . && isort ."
+pre_commit = 'task format && task requirements && task config_git && git status && git add . && git status'
+commit = "git commit -m"
+post_commit = "git push"
