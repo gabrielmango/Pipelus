@@ -5,13 +5,15 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import MongoClient
 from pymongo.database import Database
 
+from pipelus.db.base_connection import SyncBaseConnection
 
-class MongoDBConnection:
+
+class MongoDBConnection(SyncBaseConnection):
     """Gerencia a conexão com um banco MongoDB."""
 
     def __init__(self, connection_string: str, db_name: str) -> None:
         """Inicializa a classe MongoDBConnection."""
-        self.connection_string: str = connection_string
+        super().__init__(connection_string)
         self.db_name: str = db_name
         self.client: Optional[MongoClient] = None
         self.db: Optional[Database] = None
