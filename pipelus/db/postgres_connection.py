@@ -2,50 +2,29 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 from sqlalchemy import TextClause, create_engine, text
-from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (AsyncConnection, AsyncEngine,
                                     create_async_engine)
 
+from pipelus.db.base_connection import SyncBaseConnectionWithExecute
 
-class PostgresConnection:
+
+class PostgresConnection(SyncBaseConnectionWithExecute):
     """Gerencia a conexão com um banco PostgreSQL."""
 
     def __init__(self, connection_string: str) -> None:
         """Inicializa a classe PostgresConnection."""
-        self.connection_string: str = connection_string
-        self.engine = create_engine(self.connection_string)
+        super().__init__(connection_string)
+        self.engine: Optional[Engine] = create_engine(
+            self._connection_string, echo=False, future=True
+        )
         self.connection: Optional[Connection] = None
 
-    def __enter__(self) -> 'PostgresConnection':
-        """Abre a conexão com o PostgreSQL ao entrar no contexto."""
+    def execute_query(self, query: str) -> List[Dict[str, Any]]:
+        """Executa uma query de leitura (SELECT)."""
         try:
-            logging.info('Abrindo conexão com PostgreSQL...')
-            self.connection = self.engine.connect()
-            logging.info('Conexão estabelecida com PostgreSQL.')
-            return self
-        except Exception as e:
-            logging.error(f'Erro ao conectar ao PostgreSQL: {str(e)}')
-            raise
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Fecha a conexão ao sair do contexto."""
-        if self.connection:
-            try:
-                self.connection.close()
-                logging.info('Conexão com PostgreSQL encerrada com sucesso.')
-            except Exception as e:
-                logging.error(
-                    f'Erro ao fechar conexão com PostgreSQL: {str(e)}'
-                )
-
-    def execute_query(
-        self, query: str, params: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
-        """Executa uma query de leitura (SELECT) e retorna os resultados."""
-        try:
-            logging.debug('Executando query.')
-            result = self.connection.execute(text(query), params or {})
+            result = self.connection.execute(text(query))
             columns = result.keys()
             data = [dict(zip(columns, row)) for row in result.fetchall()]
             logging.info(
@@ -56,17 +35,15 @@ class PostgresConnection:
             logging.error(f'Erro ao executar query: {str(e)}')
             return []
 
-    def execute_modify(
-        self, query: str | TextClause, params: Optional[Dict[str, Any]] = None
-    ) -> bool:
+    def execute_modify(self, query: str) -> bool:
         """Executa uma query de modificação (INSERT, UPDATE, DELETE)."""
         try:
             logging.debug('Executando modificação.')
-            with self.engine.begin() as connection:
+            with self.engine.begin() as conn:
                 if isinstance(query, TextClause):
-                    connection.execute(query, params or {})
+                    conn.execute(query)
                 else:
-                    connection.execute(text(query), params or {})
+                    conn.execute(text(query))
             logging.info('Query de modificação executada com sucesso.')
             return True
         except SQLAlchemyError as e:

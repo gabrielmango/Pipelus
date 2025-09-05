@@ -8,7 +8,7 @@ class SyncBaseConnection(ABC):
 
     def __init__(self, connection_string: str) -> None:
         """Inicializa a classe."""
-        self._connection_string: str = connection_string
+        self.connection_string: str = connection_string
         self.engine = None
         self.connection = None
 
