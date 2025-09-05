@@ -1,6 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
 class SyncBaseConnection(ABC):
@@ -44,3 +46,34 @@ class SyncBaseConnectionWithExecute(SyncBaseConnection):
     def execute_modify(self, query: str) -> bool:
         """Executa uma query de modificação (INSERT, UPDATE, DELETE)."""
         pass
+
+
+class AsyncBaseConnection(ABC):
+    """Classe abstrata para conexões assíncronas de banco de dados."""
+
+    def __init__(self, connection_string: str) -> None:
+        """Inicializa a classe."""
+        self.connection_string: str = connection_string
+        self.engine: Optional[AsyncEngine] = None
+        self.connection: Optional[AsyncConnection] = None
+
+    async def __aenter__(self):
+        """Abre a conexão com o banco de dados."""
+        try:
+            if self.engine is None:
+                raise ValueError('O engine não foi inicializado.')
+            self.connection = await self.engine.connect()
+            logging.info('Conexão assíncrona estabelecida.')
+            return self
+        except Exception as e:
+            logging.error(f'Erro ao conectar de forma assíncrona: {str(e)}')
+            raise
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Fecha a conexão ao sair do contexto assíncrono."""
+        if self.connection:
+            try:
+                await self.connection.close()
+                logging.info('Conexão assíncrona encerrada com sucesso.')
+            except Exception as e:
+                logging.error(f'Erro ao fechar conexão assíncrona: {str(e)}')
