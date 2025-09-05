@@ -77,3 +77,13 @@ class AsyncBaseConnection(ABC):
                 logging.info('Conexão assíncrona encerrada com sucesso.')
             except Exception as e:
                 logging.error(f'Erro ao fechar conexão assíncrona: {str(e)}')
+
+    @abstractmethod
+    async def execute_query(self, query: str) -> List[Dict[str, Any]]:
+        """Executa uma query de leitura (SELECT) e retorna os resultados."""
+        pass
+
+    @abstractmethod
+    async def execute_modify(self, query: str) -> List[Dict[str, Any]]:
+        """Executa uma query de modificação (INSERT, UPDATE, DELETE)."""
+        pass
