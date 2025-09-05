@@ -1,5 +1,6 @@
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
 
 class SyncBaseConnection(ABC):
@@ -29,3 +30,17 @@ class SyncBaseConnection(ABC):
                 logging.info('Conexão encerrada com sucesso.')
             except Exception as e:
                 logging.error(f'Erro ao fechar conexão: {str(e)}')
+
+
+class SyncBaseConnectionWithExecute(SyncBaseConnection):
+    """Extensão da SyncBaseConnection que define os métodos abstratos."""
+
+    @abstractmethod
+    def execute_query(self, query: str) -> List[Dict[str, Any]]:
+        """Executa uma query de leitura (SELECT) e retorna os resultados."""
+        pass
+
+    @abstractmethod
+    def execute_modify(self, query: str) -> bool:
+        """Executa uma query de modificação (INSERT, UPDATE, DELETE)."""
+        pass
